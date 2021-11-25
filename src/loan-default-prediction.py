@@ -26,3 +26,29 @@ for feature_name in CATEGORICAL_COLUMNS:
 
 for feature_name in NUMERIC_COLUMNS:
     feature_columns.append(tf.feature_column.numeric_column(feature_name, dtype=tf.float32))
+
+# define input function to split dataset into batches
+def make_input_fn(data_df, label_df, num_epochs=10, shuffle=True, batch_size=32):
+    def input_function():
+        # create tf.data.Dataset object 
+        dataset = tf.data.Dataset.from_tensor_slices((dict(data_df), label_df))
+        if shuffle:
+            dataset = dataset.shuffle(1000)  # shuffles order of data
+        dataset = dataset.batch(batch_size).repeat(num_epochs)
+        return dataset
+    return input_function
+
+# call input function to convert data into dataset
+train_input_fn = make_input_fn(train, y_train)
+eval_input_fn = make_input_fn(evaluate, y_evaluate, num_epochs=1, shuffle=False)
+
+# creates the model
+linear_estimator = tf.estimator.LinearClassifier(feature_columns=feature_columns)
+
+# train the model
+linear_estimator.train(train_input_fn)
+result = linear_estimator.evaluate(eval_input_fn)
+
+# clear training  output and print results
+clear_output()
+print(result)  # around a 96% average
